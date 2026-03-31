@@ -22,7 +22,7 @@ jobs:
 
       - name: Use token
         env:
-          GH_TOKEN: ${{ steps.token.outputs.token }}
+          GH_TOKEN: ${{ steps.token.outputs.github_token }}
         run: |
           echo "Token status: ${{ steps.token.outputs.status }}"
 ```
@@ -40,5 +40,5 @@ None. The action uses the following environment variables which must be configur
 
 | Output | Description |
 |--------|-------------|
-| `token` | The P6M YBOR installation token |
+| `github_token` | The P6M YBOR installation token |
 | `status` | The status of the token exchange |

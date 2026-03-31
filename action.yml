@@ -4,7 +4,7 @@ author: "P6M Platform <platform@ybor.ai>"
 
 # Define the outputs for this action
 outputs:
-  token:
+  github_token:
     description: The P6M YBOR installation token
     value: ${{ steps.p6m-ybor.outputs.token }}
   status:
@@ -41,5 +41,5 @@ runs:
 
 # Define the branding for the action in the GitHub Marketplace
 branding:
-  icon: "key"
+  icon: "lock"
   color: "blue"
