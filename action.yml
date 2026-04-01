@@ -2,6 +2,16 @@ name: "P6M Token Exchange Action"
 description: "Exchanges GitHub Actions OIDC token for a P6M YBOR installation token"
 author: "P6M Platform <platform@ybor.ai>"
 
+# Define the inputs for this action
+inputs:
+  platform_installation_id:
+    description: The P6M platform installation ID
+    required: false
+  platform_token_exchange_url:
+    description: The URL of the token exchange service
+    required: false
+    default: "https://auth.p6m.dev/api/github/actions/token-exchange"
+
 # Define the outputs for this action
 outputs:
   github_token:
@@ -20,8 +30,8 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
-        PLATFORM_INSTALLATION_ID: ${{ vars.PLATFORM_INSTALLATION_ID }}
-        PLATFORM_TOKEN_EXCHANGE_URL: ${{ vars.PLATFORM_TOKEN_EXCHANGE_URL }}
+        PLATFORM_INSTALLATION_ID: ${{ inputs.platform_installation_id }}
+        PLATFORM_TOKEN_EXCHANGE_URL: ${{ inputs.platform_token_exchange_url }}
       run: |
         set -euo pipefail
         ACTIONS_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
