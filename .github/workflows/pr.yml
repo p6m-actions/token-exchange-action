@@ -21,3 +21,4 @@ jobs:
         uses: ./
         with:
           platform_installation_id: ${{ vars.PLATFORM_INSTALLATION_ID }}
+          platform_token_exchange_url: https://auth-dev.p6m.dev/api/github/actions/token-exchange
