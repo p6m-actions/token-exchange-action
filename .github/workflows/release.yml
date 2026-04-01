@@ -12,14 +12,14 @@ on:
           - "minor_release"
           - "major_branch"
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      id-token: write
 
     steps:
       - name: Checkout code
