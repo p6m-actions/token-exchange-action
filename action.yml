@@ -20,6 +20,8 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        PLATFORM_INSTALLATION_ID: ${{ vars.PLATFORM_INSTALLATION_ID }}
+        PLATFORM_TOKEN_EXCHANGE_URL: ${{ vars.PLATFORM_TOKEN_EXCHANGE_URL }}
       run: |
         set -euo pipefail
         ACTIONS_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
