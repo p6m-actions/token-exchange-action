@@ -13,5 +13,6 @@ jobs:
       id-token: write
 
     steps:
-      - run: |
-          curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | base64 | base64
+      - name: Get P6M YBOR Token
+        id: token
+        uses: ./
