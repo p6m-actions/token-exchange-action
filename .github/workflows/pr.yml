@@ -25,4 +25,4 @@ jobs:
       - name: Get P6M YBOR Token
         uses: ./
         with:
-          platform_token_exchange_url: https://${{ inputs.hostname || 'auth.p6m.dev' }}/api/github/actions/token-exchange
+          platform_token_exchange_url: https://${{ inputs.hostname || 'macbook-ybor.rockhopper-hen.ts.net' }}/api/github/actions/token-exchange
