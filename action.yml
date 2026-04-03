@@ -72,12 +72,14 @@ runs:
         echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
         echo "GH_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
 
-    - name: Set GIT identity
+    - name: Configure Git for App Token
       if: inputs.set_env == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
       shell: bash
       run: |
         git config --global user.name "p6m-ybor[bot]"
         git config --global user.email "184961816+p6m-ybor[bot]@users.noreply.github.com"
+        git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+        git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.p6m-ybor.outputs.token }}" | base64)"
 
     - name: Show Summary
       if: inputs.show_summary == 'true'
