@@ -16,48 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Stash Original Token
-        id: original
-        env:
-          ORIGINAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PREFIX=$(echo "$ORIGINAL_TOKEN" | cut -c1-4)
-          SUFFIX=$(echo "$ORIGINAL_TOKEN" | rev | cut -c1-4 | rev)
-          echo "redacted=${PREFIX}...${SUFFIX}" >> $GITHUB_OUTPUT
-
       - name: Get P6M YBOR Token
-        id: token
         uses: ./
         with:
           platform_token_exchange_url: https://auth-dev.p6m.dev/api/github/actions/token-exchange
-
-      - name: Redact New Token
-        id: updated
-        run: |
-          PREFIX=$(echo "$GITHUB_TOKEN" | cut -c1-4)
-          SUFFIX=$(echo "$GITHUB_TOKEN" | rev | cut -c1-4 | rev)
-          echo "redacted=${PREFIX}...${SUFFIX}" >> $GITHUB_OUTPUT
-
-      - name: Verify Token
-        shell: bash {0}
-        run: |
-          echo "## Token Exchange Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Status | \`${{ steps.token.outputs.status }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Original Token | \`${{ steps.original.outputs.redacted }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Exchanged Token | \`${{ steps.updated.outputs.redacted }}\` |" >> $GITHUB_STEP_SUMMARY
-
-          # Use the token to list repos accessible to the installation
-          REPOS=$(gh api /installation/repositories --jq '.repositories[].full_name' 2>/dev/null) || true
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Accessible Repositories" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -n "$REPOS" ]; then
-            echo "$REPOS" | while read -r repo; do
-              echo "- \`$repo\`" >> $GITHUB_STEP_SUMMARY
-            done
-          else
-            echo "_No repositories accessible or token invalid_" >> $GITHUB_STEP_SUMMARY
-          fi
