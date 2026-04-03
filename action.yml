@@ -39,6 +39,7 @@ runs:
       env:
         PLATFORM_INSTALLATION_ID: ${{ inputs.platform_installation_id }}
         PLATFORM_TOKEN_EXCHANGE_URL: ${{ inputs.platform_token_exchange_url }}
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
       run: |
         set -euo pipefail
         ACTIONS_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
@@ -49,7 +50,7 @@ runs:
             -H "x-github-token: ${{ github.token }}" \
             -H "x-actions-token: $ACTIONS_TOKEN" \
             -H "x-installation-id: $PLATFORM_INSTALLATION_ID" \
-            -d '${{ toJSON(github) }}' \
+            -d "$GITHUB_CONTEXT" \
             $PLATFORM_TOKEN_EXCHANGE_URL)
         ERROR=$(echo "$RESPONSE" | jq -r '.error')
         if [ "$ERROR" != 'null' ]; then
@@ -70,15 +71,6 @@ runs:
         echo "__GH_TOKEN__=${{ github.token }}" >> $GITHUB_ENV
         echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
         echo "GH_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
-
-    - name: Set GIT identity
-      if: inputs.set_env == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
-      shell: bash
-      run: |
-        echo "GIT_AUTHOR_NAME=p6m-ybor[bot]" >> $GITHUB_ENV
-        echo "GIT_AUTHOR_EMAIL=184961816+p6m-ybor[bot]@users.noreply.github.com" >> $GITHUB_ENV
-        echo "GIT_COMMITTER_NAME=p6m-ybor[bot]" >> $GITHUB_ENV
-        echo "GIT_COMMITTER_EMAIL=184961816+p6m-ybor[bot]@users.noreply.github.com" >> $GITHUB_ENV
 
     - name: Show Summary
       if: inputs.show_summary == 'true'
@@ -105,10 +97,6 @@ runs:
         echo "| Status | \`${{ steps.p6m-ybor.outputs.status }}\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Original Token | \`$OLD_REDACTED\` |" >> $GITHUB_STEP_SUMMARY
         echo "| Exchanged Token | \`$NEW_REDACTED\` |" >> $GITHUB_STEP_SUMMARY
-        if [ -n "$GIT_AUTHOR_NAME" ]; then
-          echo "| Git Author | \`$GIT_AUTHOR_NAME\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Git Email | \`$GIT_AUTHOR_EMAIL\` |" >> $GITHUB_STEP_SUMMARY
-        fi
         if [ "${{ inputs.set_env }}" == "true" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '> **Tip:** The original token is preserved in `__GITHUB_TOKEN__` / `__GH_TOKEN__` env vars and via `${{ '{{' }} github.token ${{ '}}' }}`.' >> $GITHUB_STEP_SUMMARY
