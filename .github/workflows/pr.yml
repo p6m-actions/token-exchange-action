@@ -2,6 +2,12 @@ name: Test Token Exchange
 
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      hostname:
+        description: Token exchange hostname
+        required: false
+        default: auth.p6m.dev
 
 jobs:
   test:
@@ -19,4 +25,4 @@ jobs:
       - name: Get P6M YBOR Token
         uses: ./
         with:
-          platform_token_exchange_url: https://auth-dev.p6m.dev/api/github/actions/token-exchange
+          platform_token_exchange_url: https://${{ inputs.hostname || 'auth.p6m.dev' }}/api/github/actions/token-exchange
