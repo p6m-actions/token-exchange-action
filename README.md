@@ -1,6 +1,6 @@
-# P6M Token Exchange Action
+# P6M Token Exchange
 
-![Latest Release](https://img.shields.io/github/v/release/p6m-actions/token-exchange-action?style=flat-square&label=Latest%20Release&color=blue)
+![Latest Release](https://img.shields.io/github/v/release/p6m-actions/token-exchange?style=flat-square&label=Latest%20Release&color=blue)
 
 ## Description
 
@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Get P6M Token
         id: token
-        uses: p6m-actions/token-exchange-action@v1
+        uses: p6m-actions/token-exchange@v2
 
       - name: Use token
         env:

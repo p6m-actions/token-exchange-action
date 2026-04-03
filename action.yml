@@ -1,4 +1,4 @@
-name: "P6M Token Exchange Action"
+name: "P6M Token Exchange"
 description: "Exchanges GitHub Actions OIDC token for a P6M YBOR installation token"
 author: "P6M Platform <platform@ybor.ai>"
 
@@ -11,6 +11,10 @@ inputs:
     description: The URL of the token exchange service
     required: false
     default: "https://auth.p6m.dev/api/github/actions/token-exchange"
+  set_env:
+    description: Whether to set GITHUB_TOKEN in the environment
+    required: false
+    default: "true"
 
 # Define the outputs for this action
 outputs:
@@ -52,6 +56,11 @@ runs:
         STATUS=$(echo "$RESPONSE" | jq -er '.status')
         echo status=$STATUS >> $GITHUB_OUTPUT
         echo "Status: $STATUS"
+
+    - name: Set GITHUB_TOKEN
+      if: inputs.set_env == 'true'
+      shell: bash
+      run: echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
 
 # Define the branding for the action in the GitHub Marketplace
 branding:
