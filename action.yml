@@ -72,6 +72,13 @@ runs:
         echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
         echo "GH_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
 
+    - name: Set GIT identity
+      if: inputs.set_env == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
+      shell: bash
+      run: |
+        git config --global user.name "p6m-ybor[bot]"
+        git config --global user.email "184961816+p6m-ybor[bot]@users.noreply.github.com"
+
     - name: Show Summary
       if: inputs.show_summary == 'true'
       shell: bash {0}
