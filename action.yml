@@ -12,7 +12,11 @@ inputs:
     required: false
     default: "https://auth.p6m.dev/api/github/actions/token-exchange"
   set_env:
-    description: Whether to set GITHUB_TOKEN in the environment
+    description: Whether to set GITHUB_TOKEN and GH_TOKEN in the environment
+    required: false
+    default: "true"
+  show_summary:
+    description: Whether to output token exchange results to GITHUB_STEP_SUMMARY
     required: false
     default: "true"
 
@@ -33,16 +37,16 @@ runs:
       id: p6m-ybor
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ github.token }}
         PLATFORM_INSTALLATION_ID: ${{ inputs.platform_installation_id }}
         PLATFORM_TOKEN_EXCHANGE_URL: ${{ inputs.platform_token_exchange_url }}
       run: |
         set -euo pipefail
         ACTIONS_TOKEN=$(curl -s -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
           "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -er '.value')
+
         RESPONSE=$(curl -X POST \
             -H "Content-Type: application/vnd.p6m.github-context+json" \
-            -H "x-github-token: $GITHUB_TOKEN" \
+            -H "x-github-token: ${{ github.token }}" \
             -H "x-actions-token: $ACTIONS_TOKEN" \
             -H "x-installation-id: $PLATFORM_INSTALLATION_ID" \
             -d '${{ toJSON(github) }}' \
@@ -57,10 +61,71 @@ runs:
         echo status=$STATUS >> $GITHUB_OUTPUT
         echo "Status: $STATUS"
 
-    - name: Set GITHUB_TOKEN
+    # Devnote: GH_TOKEN is used by the gh CLI, while GITHUB_TOKEN is used by GitHub Actions and other tools
+    - name: Set GITHUB_TOKEN and GH_TOKEN
       if: inputs.set_env == 'true'
       shell: bash
-      run: echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
+      run: |
+        echo "__GITHUB_TOKEN__=${{ github.token }}" >> $GITHUB_ENV
+        echo "__GH_TOKEN__=${{ github.token }}" >> $GITHUB_ENV
+        echo "GITHUB_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
+        echo "GH_TOKEN=${{ steps.p6m-ybor.outputs.token }}" >> $GITHUB_ENV
+
+    - name: Set GIT identity
+      if: inputs.set_env == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
+      shell: bash
+      run: |
+        echo "GIT_AUTHOR_NAME=p6m-ybor[bot]" >> $GITHUB_ENV
+        echo "GIT_AUTHOR_EMAIL=184961816+p6m-ybor[bot]@users.noreply.github.com" >> $GITHUB_ENV
+        echo "GIT_COMMITTER_NAME=p6m-ybor[bot]" >> $GITHUB_ENV
+        echo "GIT_COMMITTER_EMAIL=184961816+p6m-ybor[bot]@users.noreply.github.com" >> $GITHUB_ENV
+
+    - name: Show Summary
+      if: inputs.show_summary == 'true'
+      shell: bash {0}
+      run: |
+        redact() {
+          local token="$1"
+           if [ -n "$token" ] && [ ${#token} -gt 8 ]; then
+            local prefix="${token:0:4}"
+            local suffix="${token: -4}"
+            echo "${prefix}...${suffix}"
+          else
+            echo "$token"
+          fi
+        }
+
+        OLD_REDACTED=$(redact "$__GITHUB_TOKEN__")
+        NEW_REDACTED=$(redact "$GITHUB_TOKEN")
+
+        echo "## Token Exchange Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Status | \`${{ steps.p6m-ybor.outputs.status }}\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Original Token | \`$OLD_REDACTED\` |" >> $GITHUB_STEP_SUMMARY
+        echo "| Exchanged Token | \`$NEW_REDACTED\` |" >> $GITHUB_STEP_SUMMARY
+        if [ -n "$GIT_AUTHOR_NAME" ]; then
+          echo "| Git Author | \`$GIT_AUTHOR_NAME\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Git Email | \`$GIT_AUTHOR_EMAIL\` |" >> $GITHUB_STEP_SUMMARY
+        fi
+        if [ "${{ inputs.set_env }}" == "true" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '> **Tip:** The original token is preserved in `__GITHUB_TOKEN__` / `__GH_TOKEN__` env vars and via `${{ '{{' }} github.token ${{ '}}' }}`.' >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Use the token to list repos accessible to the installation
+        REPOS=$(gh api /installation/repositories --jq '.repositories[].full_name' 2>/dev/null) || true
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Accessible Repositories" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ -n "$REPOS" ]; then
+          echo "$REPOS" | while read -r repo; do
+            echo "- \`$repo\`" >> $GITHUB_STEP_SUMMARY
+          done
+        else
+          echo "_No repositories accessible or token invalid_" >> $GITHUB_STEP_SUMMARY
+        fi
 
 # Define the branding for the action in the GitHub Marketplace
 branding:
