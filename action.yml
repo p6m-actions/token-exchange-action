@@ -78,12 +78,16 @@ runs:
         GH_TOKEN: ${{ steps.p6m-ybor.outputs.token }}
       run: |
         # Try to resolve bot identity from the exchanged token
-        echo "::debug::Attempting GET /user with exchanged token"
-        USER_JSON=$(gh api /user 2>&1) || true
-        echo "::debug::GET /user response: $USER_JSON"
+        HTTP_CODE=$(curl -s -o /tmp/user_response.json -w '%{http_code}' \
+          -H "Authorization: token $GH_TOKEN" \
+          https://api.github.com/user)
+        USER_JSON=$(cat /tmp/user_response.json)
+        echo "::warning::GET /user HTTP $HTTP_CODE"
         BOT_LOGIN=$(echo "$USER_JSON" | jq -r '.login // empty' 2>/dev/null)
         BOT_ID=$(echo "$USER_JSON" | jq -r '.id // empty' 2>/dev/null)
-        echo "::debug::BOT_LOGIN=$BOT_LOGIN BOT_ID=$BOT_ID"
+        if [ -z "$BOT_LOGIN" ] || [ -z "$BOT_ID" ]; then
+          echo "::warning::GET /user response: $USER_JSON"
+        fi
 
         if [ -n "$BOT_LOGIN" ] && [ -n "$BOT_ID" ]; then
           echo "::debug::Resolved bot identity: $BOT_LOGIN ($BOT_ID)"
