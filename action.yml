@@ -15,6 +15,10 @@ inputs:
     description: Whether to set GITHUB_TOKEN and GH_TOKEN in the environment
     required: false
     default: "true"
+  skip_ci:
+    description: Append skip-checks trailer to commit messages to prevent workflow loops
+    required: false
+    default: "true"
   show_summary:
     description: Whether to output token exchange results to GITHUB_STEP_SUMMARY
     required: false
@@ -91,6 +95,19 @@ runs:
         git config --global user.email "184961816+p6m-ybor[bot]@users.noreply.github.com"
         git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
         git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.p6m-ybor.outputs.token }}" | base64)"
+
+    # Prevent workflow loops when pushing with an app token by appending a
+    # skip-checks trailer to every commit message via a prepare-commit-msg hook.
+    # https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
+    - name: Install skip-checks commit hook
+      if: inputs.skip_ci == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
+      shell: bash
+      run: |
+        cat > .git/hooks/prepare-commit-msg << 'EOF'
+        #!/bin/sh
+        printf '\n\nskip-checks: true\n' >> "$1"
+        EOF
+        chmod +x .git/hooks/prepare-commit-msg
 
     - name: Show Summary
       if: inputs.show_summary == 'true'
