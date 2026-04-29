@@ -37,6 +37,20 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Check id-token permission
+      shell: bash
+      run: |
+        if [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+          GITHUB_WORKFLOW_FILE=$(echo "$GITHUB_WORKFLOW_REF" | awk -F@ '{print $1}')
+          echo "::error file=${GITHUB_WORKFLOW_FILE},title=Missing permission:: requires `id-token: write` so p6m-release-action can mint a GitHub App token via OIDC. Add the following to your workflow's permissions block:"
+          echo ""
+          echo "  permissions:"
+          echo "    contents: write"
+          echo "    id-token: write"
+          echo ""
+          exit 1
+        fi
+
     - name: Get P6M YBOR Token
       id: p6m-ybor
       shell: bash
