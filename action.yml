@@ -16,7 +16,7 @@ inputs:
     required: false
     default: "true"
   skip_ci:
-    description: Append skip-checks trailer to commit messages to prevent workflow loops
+    description: Prepend [skip ci] to commit messages to prevent workflow loops
     required: false
     default: "true"
   show_summary:
@@ -96,8 +96,8 @@ runs:
         git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
         git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${{ steps.p6m-ybor.outputs.token }}" | base64)"
 
-    # Prevent workflow loops when pushing with an app token by appending a
-    # skip-checks trailer to every commit message via a prepare-commit-msg hook.
+    # Prevent workflow loops when pushing with an app token by prepending
+    # [skip ci] to every commit message via a prepare-commit-msg hook.
     # https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
     - name: Install skip-checks commit hook
       if: inputs.skip_ci == 'true' && steps.p6m-ybor.outputs.status == 'exchanged'
@@ -105,11 +105,35 @@ runs:
       run: |
         cat > .git/hooks/prepare-commit-msg << 'EOF'
         #!/bin/sh
-        printf '\n\nskip-checks: true\n' >> "$1"
+        # Prepend [skip ci] to the commit subject to prevent workflow loops
+        # when pushing with an app token. If GitHub already recognizes a skip
+        # marker in the message, leave it untouched.
+        # https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs
+        set -eu
+
+        if [ -z "${1:-}" ]; then
+          echo "prepare-commit-msg: missing commit message file argument" >&2
+          exit 1
+        fi
+        if [ ! -r "$1" ]; then
+          echo "prepare-commit-msg: commit message file not readable: $1" >&2
+          exit 1
+        fi
+        if [ ! -w "$1" ]; then
+          echo "prepare-commit-msg: commit message file not writable: $1" >&2
+          exit 1
+        fi
+
+        if grep -qE '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]|skip-checks:[[:space:]]*true' -- "$1"; then
+          exit 0
+        fi
+
+        { printf '[skip ci] '; cat -- "$1"; } > "$1.tmp"
+        mv -- "$1.tmp" "$1"
         EOF
         chmod +x .git/hooks/prepare-commit-msg
 
-    - name: Show Summary
+    - name: Show Summary  
       if: inputs.show_summary == 'true'
       shell: bash {0}
       run: |
