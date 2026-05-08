@@ -7,6 +7,10 @@ inputs:
   platform_installation_id:
     description: The P6M platform installation ID
     required: false
+  target_repositories:
+    description: 'Comma-separated list of owner/repo names to include in the issued token scope, in addition to the calling repo. Each must belong to the same App installation as the caller. Service-side support required (auth.p6m.dev) — silently ignored if the service does not honor the header.'
+    required: false
+    default: ""
   platform_token_exchange_url:
     description: The URL of the token exchange service
     required: false
@@ -43,6 +47,7 @@ runs:
       env:
         PLATFORM_INSTALLATION_ID: ${{ inputs.platform_installation_id }}
         PLATFORM_TOKEN_EXCHANGE_URL: ${{ inputs.platform_token_exchange_url }}
+        TARGET_REPOSITORIES: ${{ inputs.target_repositories }}
         GITHUB_CONTEXT: ${{ toJSON(github) }}
       run: |
         set -euo pipefail
@@ -65,6 +70,7 @@ runs:
             -H "x-github-token: ${{ github.token }}" \
             -H "x-actions-token: $ACTIONS_TOKEN" \
             -H "x-installation-id: $PLATFORM_INSTALLATION_ID" \
+            -H "x-target-repositories: ${TARGET_REPOSITORIES}" \
             -d "$GITHUB_CONTEXT" \
             $PLATFORM_TOKEN_EXCHANGE_URL)
         ERROR=$(echo "$RESPONSE" | jq -r '.error')
