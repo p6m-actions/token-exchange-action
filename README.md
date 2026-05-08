@@ -46,11 +46,28 @@ After the exchange, the original workflow token is available in three ways:
           echo "$ORIGINAL"
 ```
 
+### Widening the token scope to a sibling repo
+
+To push to a different repo in the same App installation (e.g. an `*-apps-host` repo from an MFE app repo), pass `target_repositories`:
+
+```yaml
+      - name: Get P6M Token (with sibling repo access)
+        uses: p6m-actions/token-exchange@v2
+        with:
+          target_repositories: my-org/my-apps-host
+
+      - name: Push to sibling repo
+        run: |
+          git clone https://github.com/my-org/my-apps-host.git
+          # GITHUB_TOKEN now has access to both the caller and my-org/my-apps-host
+```
+
 ## Inputs
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `platform_installation_id` | The P6M platform installation ID | No | Resolved from GitHub context |
+| `target_repositories` | Comma-separated `owner/repo` list to widen the issued token's scope to (in addition to the caller). All repos must belong to the same App installation. Requires service-side support. | No | `""` |
 | `platform_token_exchange_url` | The URL of the token exchange service | No | `https://auth.p6m.dev/api/github/actions/token-exchange` |
 | `set_env` | Whether to set `GITHUB_TOKEN` and `GH_TOKEN` in the environment | No | `true` |
 | `show_summary` | Whether to output token exchange results to `GITHUB_STEP_SUMMARY` | No | `true` |
